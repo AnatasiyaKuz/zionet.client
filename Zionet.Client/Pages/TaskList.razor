@@ -1,0 +1,119 @@
+@page "/taskList"
+@using ClientEntity
+@inject DataService data
+@inject HttpClient Http
+
+@using System 
+@using System.IO
+@using System.Net.Http.Headers
+@using Zionet.Competition.Client.Services
+
+<PageTitle>Create a task</PageTitle>
+
+<h1>Tasks:</h1>
+    <table>
+        <tr>
+            <th> </th>
+            <th>Task</th>
+            <th> </th>
+            <th>Points</th>
+            <th>Duration</th>
+            <th>File name</th>
+            <th>Has Bonus Task</th>
+        </tr>
+        @for (var i=0;i<ListOfTasks.Count;i++)
+        {       
+            <tr>
+                <td>
+                    <input  type="radio" 
+                            id="@i" 
+                            name="taskList" 
+                            value="@ListOfTasks[i].id"
+                            @onchange="@OnListTaskChange">
+                </td>                
+                <td>
+                    <label for="@i">
+                        @ListOfTasks[i].task_name
+                    </label>
+                </td>
+                <td>
+                    <NavLink href="@($"task/{@ListOfTasks[i].id}")">
+                        See details..
+                    </NavLink>
+                </td>
+                <td>
+                    <label for="@i">
+                        @ListOfTasks[i].task_points
+                    </label>
+                </td>
+                <td>
+                    <label for="@i">
+                        @ListOfTasks[i].task_duration
+                    </label>
+                </td>
+                <td>
+                    <label for="@i">
+                        @ListOfTasks[i].task_file_name
+                    </label>
+                </td>
+                @foreach (var bonusToTask in ListOfBonusToTask)
+                {
+                    @if(ListOfTasks[i].id == bonusToTask.id_main_task){
+                        <td>
+                            <label for="@i">
+                                true
+                            </label>
+                        </td>            
+                    }
+                    else{
+                        <td>
+                            <label for="@i">
+                                false
+                            </label>
+                        </td>            
+                    }
+                }
+            </tr>
+        }
+    </table>
+
+    <NavLink href="taskCreator">
+                <span class="oi oi-list-rich" aria-hidden="true"></span>Create new task
+    </NavLink>
+    <br>
+
+    @if(choosenTask != null){
+        <NavLink href="@($"task/{@choosenTask.id}")">
+                <span class="oi oi-list-rich" aria-hidden="true"></span>Edit
+        </NavLink>
+        <br>
+        @if(ListOfBonusToTask.FindIndex(p =>p.id_main_task==choosenTask.id) == -1)
+        {
+            <NavLink href="taskCreator">
+                <span class="oi oi-list-rich" aria-hidden="true"></span>Add Bonus task
+            </NavLink>
+        }
+    }   
+    
+
+@code {
+    List<MTask> ListOfTasks = new List<MTask>();
+    MTask choosenTask = new MTask();
+    List<MBonusToTask> ListOfBonusToTask = new List<MBonusToTask>();
+
+    @*----------------Downloading main task and all bonus tasks----------------*@
+    protected override async Task OnInitializedAsync()
+    {
+        ListOfTasks = await data.GetMainTasks();
+        ListOfBonusToTask = await data.GetAllBonusTask();
+        choosenTask = null;
+    }
+
+    @*----------------Changing choosen task by radio button----------------*@
+    private void OnListTaskChange(ChangeEventArgs e){
+        if(e.Value != ""){
+            var IndexSelectedTask = ListOfTasks.FindIndex(p => p.id == int.Parse(e.Value.ToString()));
+            choosenTask = ListOfTasks[IndexSelectedTask];
+        }
+    }
+}
